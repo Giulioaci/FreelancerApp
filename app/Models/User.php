@@ -15,22 +15,29 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
+    // CAMPi riempibili
     protected $fillable = [
         'name',
         'email',
         'password',
+        'plan', // free/pro
     ];
 
+    // CAMPi nascosti
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
+    // CASTS
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
 
+    // ===========================
+    // RELAZIONI
+    // ===========================
     public function clients()
     {
         return $this->hasMany(Client::class);
@@ -41,9 +48,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Appointment::class);
     }
 
-    /**
-     * Override invio reset password usando Yahoo
-     */
+    // ===========================
+    // MAIL RESET PASSWORD
+    // ===========================
     public function sendPasswordResetNotification($token)
     {
         $email = $this->email;
@@ -54,10 +61,39 @@ class User extends Authenticatable implements MustVerifyEmail
             'email' => $email,
         ];
 
-        // Invia la mail tramite il mailer Yahoo configurato
         Mail::mailer('yahoo')->to($email)->send(new GenericMail($view, $data));
     }
+
+    // ===========================
+    // UTILI PER LIMITI PIANO
+    // ===========================
+    
+    /**
+     * Verifica se l'utente free ha raggiunto il limite clienti
+     */
+    public function hasReachedClientLimit(): bool
+    {
+        return $this->plan === 'free' && $this->clients()->count() >= 5;
+    }
+
+    /**
+     * Restituisce il numero di clienti utilizzati
+     */
+    public function clientsCount(): int
+    {
+        return $this->clients()->count();
+    }
+
+    /**
+     * Verifica se l'utente è PRO
+     */
+    public function isPro(): bool
+    {
+        return $this->plan === 'pro';
+    }
 }
+
+
 
 
 
